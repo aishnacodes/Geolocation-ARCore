@@ -11,7 +11,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -29,7 +28,6 @@ import com.example.aishnaagrawal.ardemo.helper.CameraPermissionHelper;
 import com.example.aishnaagrawal.ardemo.model.MarkerInfo;
 import com.example.aishnaagrawal.ardemo.renderer.BackgroundRenderer;
 import com.example.aishnaagrawal.ardemo.renderer.ObjectRenderer;
-import com.example.aishnaagrawal.ardemo.response.MarkerResponse;
 import com.google.ar.core.Config;
 import com.google.ar.core.Frame;
 import com.google.ar.core.Frame.TrackingState;
@@ -44,6 +42,8 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -149,53 +149,18 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         mMarkerApi = mRetrofit.create(MarkerApi.class);
 
-        new LoadMarkerTask().execute();
+        Call<List<MarkerInfo>> call = mMarkerApi.getMarkers();
+        call.enqueue(new Callback<List<MarkerInfo>>() {
+            @Override
+            public void onResponse(Call<List<MarkerInfo>> call, Response<List<MarkerInfo>> response) {
+                Log.d("retrofit response", response.body().isEmpty() + "");
 
-
-    }
-
-    public void setMarkerList(List<MarkerInfo> markerList) {
-        this.mMarkerList = markerList;
-    }
-
-
-    private class LoadMarkerTask extends AsyncTask<Void, Integer, List<MarkerInfo>> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected List<MarkerInfo> doInBackground(Void... params) {
-
-            Log.d("background", "here");
-
-            MarkerResponse response;
-
-            try {
-                response = runMarker();
-                return response.markerList;
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
             }
 
-        }
-
-        @Override
-        protected void onPostExecute(List<MarkerInfo> markerList) {
-            super.onPostExecute(markerList);
-            setMarkerList(markerList);
-
-        }
-    }
-
-    public static MarkerResponse runMarker() throws IOException {
-
-        Call<MarkerResponse> call = mMarkerApi.getMarker();
-        MarkerResponse response = call.execute().body();
-
-        return response;
+            @Override
+            public void onFailure(Call<List<MarkerInfo>> call, Throwable t) {
+            }
+        });
     }
 
     @Override
