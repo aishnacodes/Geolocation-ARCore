@@ -1,0 +1,2 @@
+configurations.maybeCreate("default")
+artifacts.add("default", file('obj-0.2.1.jar'))
