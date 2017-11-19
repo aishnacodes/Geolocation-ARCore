@@ -35,6 +35,7 @@ import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -80,12 +81,15 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     boolean locationServiceAvailable;
 
     private boolean isCorrectLocation;
+    private boolean isAnchorAdded = false;
     private boolean isTapped = false;
 
     private static MarkerApi mMarkerApi;
     private String mBaseUrl = "http://139.59.30.117:3000/listings/";
     private Retrofit mRetrofit;
     private List<MarkerInfo> mMarkerList;
+    private float mDepth;
+    private float[] mTranslation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,12 +153,18 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         mMarkerApi = mRetrofit.create(MarkerApi.class);
 
+        mMarkerList = new ArrayList<>();
+
         Call<List<MarkerInfo>> call = mMarkerApi.getMarkers();
         call.enqueue(new Callback<List<MarkerInfo>>() {
             @Override
             public void onResponse(Call<List<MarkerInfo>> call, Response<List<MarkerInfo>> response) {
-                Log.d("retrofit response", response.body().isEmpty() + "");
-
+                mMarkerList.addAll(response.body());
+                Log.d("Name:", mMarkerList.get(0).getName());
+                Log.d("ID:", mMarkerList.get(0).getId());
+                Log.d("Time:", mMarkerList.get(0).getTime().getData());
+                Log.d("Location:", mMarkerList.get(0).getLocation().getLat() + " " + mMarkerList.get(0).getLocation().getLng());
+                Log.d("Type:", mMarkerList.get(0).getType());
             }
 
             @Override
@@ -253,6 +263,11 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                 //  Log.d("In range", "yes");
                 mTag.setText(getString(R.string.location));
                 isCorrectLocation = true;
+                if (isTapped) {
+                    mDesc.setText(mMarkerList.get(0).getName());
+                } else {
+                    mDesc.setText("");
+                }
 
             } else {
                 mTag.setText("");
@@ -425,75 +440,49 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
             float scaleFactor = 1.0f;
 
-            if (!isCorrectLocation) {
-                scaleFactor = 0.0f;
-            }
-
-//            if (!isAnchorAdded && isCorrectLocation) {
-//
-//                float[] translation = new float[3];
-//                float[] rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
-//
-//                frame.getPose().getTranslation(translation, 0);
-//
-//                translation[1]
-//                translation[2] += -0.8f;
-//
-//                Pose pose = new Pose(translation, rotation);
-//                pose.toMatrix(mAnchorMatrix, 0);
-//
-//                mSession.addAnchor(pose);
-//
-//                Log.d("Anchor added", pose.toString());
-//
-//                isAnchorAdded = true;
-//            }
-//
-//            if (isAnchorAdded) {
-//
-//                anchor = mSession.getAllAnchors().iterator().next();
-//                Log.d("Anchor", anchor.getPose().toString());
-//
-//                anchor.getPose().toMatrix(mAnchorMatrix, 0);
-//
-//                mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-//                mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-//
-//            }
-
             if (isCorrectLocation) {
 
-                float[] translation, rotation;
                 Pose pose;
+                float[] translation = new float[3], rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
 
-                translation = new float[]{-0.1f, 0.05f, -0.8f};
-                rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
 
-                frame.getPose().getTranslation(translation, 0);
+                if (!isAnchorAdded) {
 
-                //Log.d("frame pose", translation[0] + " " + translation[1] + " " + translation[2] + "");
-                //  frame.getPose().getRotationQuaternion(rotation, 0);
+                    mTranslation = new float[]{-0.1f, -0.5f, -0.8f};
 
-                translation[2] = -0.8f;
+                    pose = new Pose(mTranslation, rotation);
 
-                pose = new Pose(translation, rotation);
-                pose.toMatrix(mAnchorMatrix, 0);
+                    pose.toMatrix(mAnchorMatrix, 0);
 
-                mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-                mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
+                    mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
+                    mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
 
-                if (tap != null) {
-                    if (!isTapped) {
-                        mDesc.setText("Welcome to Jack Baskin School of Engineering");
-                        isTapped = true;
-                    } else {
-                        mDesc.setText("");
-                        isTapped = false;
+                    isAnchorAdded = true;
+
+                } else {
+
+                    frame.getPose().getTranslation(translation, 0);
+
+                    for (int i = 0; i < 3; i++) {
+                        translation[i] = mTranslation[i] - translation[i];
                     }
+
+                    pose = new Pose(translation, rotation);
+                    pose.toMatrix(mAnchorMatrix, 0);
+
+                    mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
+                    mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
+
+                    if (tap != null) {
+                        if (!isTapped) {
+                            isTapped = true;
+                        } else {
+                            isTapped = false;
+                        }
+                    }
+
                 }
-
             }
-
 
         } catch (Throwable t) {
             // Avoid crashing the application due to unhandled exceptions.
