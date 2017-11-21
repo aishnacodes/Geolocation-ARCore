@@ -11,6 +11,9 @@ public class LocationTime {
     @SerializedName("data")
     private String data;
 
+    @SerializedName("isOpen")
+    private Boolean isOpen;
+
     public String getData() {
         return data;
     }
@@ -19,5 +22,8 @@ public class LocationTime {
         this.data = data;
     }
 
+    public Boolean checkOpen() {
+        return isOpen;
+    }
 
 }

@@ -1,6 +1,7 @@
 package com.example.aishnaagrawal.ardemo.activity;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -68,14 +69,14 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     private ArrayBlockingQueue<MotionEvent> mQueuedSingleTaps = new ArrayBlockingQueue<>(16);
 
     //Location-based stuff
-    private SensorManager sensorManager;
+    private SensorManager mSensorManager;
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 0; // 10 meters
     private static final long MIN_TIME_BW_UPDATES = 0;//1000 * 60 * 1; // 1 minute
     public static final int REQUEST_LOCATION_PERMISSIONS_CODE = 0;
 
-    private LocationManager locationManager;
+    private LocationManager mLocationManager;
     public Location mLocation;
-    private Location destination;
+
     boolean isGPSEnabled;
     boolean isNetworkEnabled;
     boolean locationServiceAvailable;
@@ -88,7 +89,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     private String mBaseUrl = "http://139.59.30.117:3000/listings/";
     private Retrofit mRetrofit;
     private List<MarkerInfo> mMarkerList;
-    private float mDepth;
     private float[] mTranslation;
 
     @Override
@@ -103,7 +103,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         mSession = new Session(/*context=*/this);
 
-        sensorManager = (SensorManager) this.getSystemService(SENSOR_SERVICE);
+        mSensorManager = (SensorManager) this.getSystemService(SENSOR_SERVICE);
 
         // Create default config, check is supported, create session from that config.
         mDefaultConfig = Config.createDefaultConfig();
@@ -141,11 +141,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         mSurfaceView.setRenderer(this);
         mSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
-        destination = new Location("Engineering");
-        destination.setLatitude(36.969527);
-        destination.setLongitude(-122.026749);
-        destination.setAltitude(-25.0);
-
         mRetrofit = new Retrofit.Builder()
                 .baseUrl(mBaseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -160,17 +155,14 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             @Override
             public void onResponse(Call<List<MarkerInfo>> call, Response<List<MarkerInfo>> response) {
                 mMarkerList.addAll(response.body());
-                Log.d("Name:", mMarkerList.get(0).getName());
-                Log.d("ID:", mMarkerList.get(0).getId());
-                Log.d("Time:", mMarkerList.get(0).getTime().getData());
-                Log.d("Location:", mMarkerList.get(0).getLocation().getLat() + " " + mMarkerList.get(0).getLocation().getLng());
-                Log.d("Type:", mMarkerList.get(0).getType());
+
             }
 
             @Override
             public void onFailure(Call<List<MarkerInfo>> call, Throwable t) {
             }
         });
+
     }
 
     @Override
@@ -204,8 +196,8 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     }
 
     private void registerSensors() {
-        sensorManager.registerListener(this,
-                sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
+        mSensorManager.registerListener(this,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
                 SensorManager.SENSOR_DELAY_FASTEST);
     }
 
@@ -228,9 +220,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             float[] updatedRotationMatrix = new float[16];
             float[] orientationValues = new float[3];
 
-            boolean isAzimuthInRange = false;
-            boolean isPitchInRange = false;
-
             SensorManager.getRotationMatrixFromVector(rotationMatrixFromVector, sensorEvent.values);
 
             SensorManager
@@ -240,42 +229,67 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
             SensorManager.getOrientation(updatedRotationMatrix, orientationValues);
 
-            bearing = mLocation.bearingTo(destination);
+            if (!mMarkerList.isEmpty()) {
 
-            azimuth = (float) Math.toDegrees(orientationValues[0]);
-            pitch = (float) Math.toDegrees(orientationValues[1]);
+                for (int i = 0; i < mMarkerList.size(); i++) {
+
+                    boolean isAzimuthInRange = false;
+                    boolean isPitchInRange = false;
+
+                    MarkerInfo marker = mMarkerList.get(0);
+
+                    bearing = mLocation.bearingTo(marker.getLocation());
+
+                    azimuth = (float) Math.toDegrees(orientationValues[0]);
+                    pitch = (float) Math.toDegrees(orientationValues[1]);
 
 
-            if (azimuth > (bearing - 50) && azimuth < (bearing + 50)) {
-                isAzimuthInRange = true;
-            }
+                    if (azimuth > (bearing - 50) && azimuth < (bearing + 50)) {
+                        isAzimuthInRange = true;
+                    }
 
-            if (pitch < -45 && pitch > -90) {
-                isPitchInRange = true;
-            }
+                    if (pitch < -45 && pitch > -90) {
+                        isPitchInRange = true;
+                    }
+
+                    Log.d("marker range before", marker.getInRange() + "");
+
+                    if (isAzimuthInRange && isPitchInRange) {
+
+                        mTag.setText(marker.getName());
+
+                        marker.setInRange(true);
 
 
-            //Log.d("location", mLocation.getAltitude() + "");
+                        if (isTapped) {
 
-            //  Log.d("azimuth", azimuth + " bearing: " + bearing + " ");
+                            String tag = marker.getCategory() + "\n" + marker.getTime().checkOpen();
+                            mDesc.setText(tag);
 
-            if (isAzimuthInRange && isPitchInRange) {
-                //  Log.d("In range", "yes");
-                mTag.setText(getString(R.string.location));
-                isCorrectLocation = true;
-                if (isTapped) {
-                    mDesc.setText(mMarkerList.get(0).getName());
-                } else {
-                    mDesc.setText("");
+                        } else {
+                            mDesc.setText("");
+                        }
+
+                    } else {
+
+                        mTag.setText("");
+                        marker.setInRange(false);
+
+                    }
+                    Log.d("marker range after", marker.getInRange() + "");
+
+                    //Log.d("location", mLocation.getAltitude() + "");
+
+                    //Log.d("azimuth", azimuth + " bearing: " + bearing + " ");
                 }
 
-            } else {
-                mTag.setText("");
-                isCorrectLocation = false;
-
             }
-
         }
+    }
+
+    public void callWeb() {
+        Intent intent = new Intent(getApplicationContext(), WebActivity.class);
+        startActivity(intent);
     }
 
     @Override
@@ -290,11 +304,11 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         }
 
         try {
-            this.locationManager = (LocationManager) this.getSystemService(this.LOCATION_SERVICE);
+            this.mLocationManager = (LocationManager) this.getSystemService(this.LOCATION_SERVICE);
 
             // Get GPS and network status
-            this.isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            this.isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            this.isGPSEnabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            this.isNetworkEnabled = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 
             if (!isNetworkEnabled && !isGPSEnabled) {
                 // cannot get location
@@ -304,21 +318,21 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             this.locationServiceAvailable = true;
 
             if (isNetworkEnabled) {
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                         MIN_TIME_BW_UPDATES,
                         MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-                if (locationManager != null) {
-                    mLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                if (mLocationManager != null) {
+                    mLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                 }
             }
 
             if (isGPSEnabled) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                         MIN_TIME_BW_UPDATES,
                         MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
 
-                if (locationManager != null) {
-                    mLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (mLocationManager != null) {
+                    mLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 }
             }
         } catch (Exception ex) {
@@ -329,7 +343,14 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
     @Override
     public void onLocationChanged(Location location) {
+
         mLocation = location;
+        MarkerInfo marker;
+
+        for (int i = 0; i < mMarkerList.size(); i++) {
+            marker = mMarkerList.get(i);
+            marker.setDistance(location.distanceTo(marker.getLocation()));
+        }
     }
 
     @Override
@@ -410,7 +431,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         // Clear screen to notify driver it should not load any pixels from previous frame.
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
-
         try {
             // Obtain the current frame from ARSession. When the configuration is set to
             // UpdateMode.BLOCKING (it is by default), this will throttle the rendering to the
@@ -440,49 +460,53 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
             float scaleFactor = 1.0f;
 
-            if (isCorrectLocation) {
+            //     if (isCorrectLocation) {
 
-                Pose pose;
-                float[] translation = new float[3], rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
+            Pose pose;
+            float[] translation = new float[3], rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
 
 
-                if (!isAnchorAdded) {
+//                if (!isAnchorAdded) {
+//
+//
+//
+//                    pose = new Pose(mTranslation, rotation);
+//
+//                    pose.toMatrix(mAnchorMatrix, 0);
+//
+//                    mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
+//                    mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
+//
+//                    isAnchorAdded = true;
+//
+//                } else {
 
-                    mTranslation = new float[]{-0.1f, -0.5f, -0.8f};
+            mTranslation = new float[]{-0.1f, -0.5f, -0.8f};
 
-                    pose = new Pose(mTranslation, rotation);
+            frame.getPose().getTranslation(translation, 0);
 
-                    pose.toMatrix(mAnchorMatrix, 0);
+            //  for (int i = 0; i < 3; i++) {
+            translation[0] = mTranslation[0] - translation[0];
+            translation[1] = mTranslation[1] - translation[1];
+            translation[2] = mTranslation[2] - translation[2];
+            //  }
 
-                    mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-                    mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
+            pose = new Pose(translation, rotation);
+            pose.toMatrix(mAnchorMatrix, 0);
 
-                    isAnchorAdded = true;
+            mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
+            mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
 
+            if (tap != null) {
+                if (!isTapped) {
+                    isTapped = true;
                 } else {
-
-                    frame.getPose().getTranslation(translation, 0);
-
-                    for (int i = 0; i < 3; i++) {
-                        translation[i] = mTranslation[i] - translation[i];
-                    }
-
-                    pose = new Pose(translation, rotation);
-                    pose.toMatrix(mAnchorMatrix, 0);
-
-                    mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-                    mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-
-                    if (tap != null) {
-                        if (!isTapped) {
-                            isTapped = true;
-                        } else {
-                            isTapped = false;
-                        }
-                    }
-
+                    isTapped = false;
                 }
             }
+
+//                }
+            //    }
 
         } catch (Throwable t) {
             // Avoid crashing the application due to unhandled exceptions.

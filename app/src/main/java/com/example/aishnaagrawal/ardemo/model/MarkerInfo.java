@@ -1,5 +1,7 @@
 package com.example.aishnaagrawal.ardemo.model;
 
+import android.location.Location;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -18,6 +20,9 @@ public class MarkerInfo {
     @SerializedName("name")
     @Expose
     private String name;
+    @SerializedName("category")
+    @Expose
+    private String category;
     @SerializedName("type")
     @Expose
     private String type;
@@ -25,45 +30,53 @@ public class MarkerInfo {
     @Expose
     private MarkerLocation markerLocation;
 
-    public String getId() {
-        return id;
+    private Float distance;
+
+    private Boolean inRange = false;
+
+    public Float getDistance() {
+        return distance;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setDistance(Float distance) {
+        this.distance = distance;
+    }
+
+    public Boolean getInRange() {
+        return inRange;
+    }
+
+    public void setInRange(Boolean inRange) {
+        this.inRange = inRange;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public MarkerLocation getLocation() {
-        return markerLocation;
-    }
-
-    public void setLocation(MarkerLocation location) {
-        this.markerLocation = location;
-    }
-
     public LocationTime getTime() {
         return time;
-    }
-
-    public void setTime(LocationTime time) {
-        this.time = time;
     }
 
     public String getType() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public String getCategory() {
+        return category;
     }
+
+    public Location getLocation() {
+        Location location = new Location(name);
+        location.setLatitude(markerLocation.getLat());
+        location.setLongitude(markerLocation.getLng());
+        return location;
+    }
+
 
 }
 
