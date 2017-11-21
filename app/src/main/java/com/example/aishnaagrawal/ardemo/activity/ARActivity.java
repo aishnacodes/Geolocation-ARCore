@@ -1,7 +1,6 @@
 package com.example.aishnaagrawal.ardemo.activity;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -150,6 +149,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         mMarkerList = new ArrayList<>();
 
+
         Call<List<MarkerInfo>> call = mMarkerApi.getMarkers();
         call.enqueue(new Callback<List<MarkerInfo>>() {
             @Override
@@ -285,11 +285,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
             }
         }
-    }
-
-    public void callWeb() {
-        Intent intent = new Intent(getApplicationContext(), WebActivity.class);
-        startActivity(intent);
     }
 
     @Override
@@ -460,58 +455,41 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
             float scaleFactor = 1.0f;
 
-            //     if (isCorrectLocation) {
+            if (!mMarkerList.isEmpty()) {
+                for (int i = 0; i < mMarkerList.size(); i++) {
 
-            Pose pose;
-            float[] translation = new float[3], rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
+                    if (mMarkerList.get(i).getInRange()) {
+                        Pose pose;
+                        float[] translation = new float[3], rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
 
+                        mTranslation = new float[]{-0.1f, -0.5f, -0.8f};
 
-//                if (!isAnchorAdded) {
-//
-//
-//
-//                    pose = new Pose(mTranslation, rotation);
-//
-//                    pose.toMatrix(mAnchorMatrix, 0);
-//
-//                    mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-//                    mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-//
-//                    isAnchorAdded = true;
-//
-//                } else {
+                        frame.getPose().getTranslation(translation, 0);
 
-            mTranslation = new float[]{-0.1f, -0.5f, -0.8f};
+                        translation[0] = mTranslation[0] - translation[0];
+                        translation[1] = mTranslation[1] - translation[1];
+                        translation[2] = mTranslation[2] - translation[2];
 
-            frame.getPose().getTranslation(translation, 0);
+                        pose = new Pose(translation, rotation);
+                        pose.toMatrix(mAnchorMatrix, 0);
 
-            //  for (int i = 0; i < 3; i++) {
-            translation[0] = mTranslation[0] - translation[0];
-            translation[1] = mTranslation[1] - translation[1];
-            translation[2] = mTranslation[2] - translation[2];
-            //  }
+                        mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
+                        mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
 
-            pose = new Pose(translation, rotation);
-            pose.toMatrix(mAnchorMatrix, 0);
-
-            mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-            mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-
-            if (tap != null) {
-                if (!isTapped) {
-                    isTapped = true;
-                } else {
-                    isTapped = false;
+                        if (tap != null) {
+                            if (!isTapped) {
+                                isTapped = true;
+                            } else {
+                                isTapped = false;
+                            }
+                        }
+                    }
                 }
             }
-
-//                }
-            //    }
-
         } catch (Throwable t) {
             // Avoid crashing the application due to unhandled exceptions.
             Log.e(TAG, "Exception on the OpenGL thread", t);
         }
-    }
 
+    }
 }

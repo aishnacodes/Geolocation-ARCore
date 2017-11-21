@@ -23,9 +23,6 @@ public class MarkerInfo {
     @SerializedName("category")
     @Expose
     private String category;
-    @SerializedName("type")
-    @Expose
-    private String type;
     @SerializedName("location")
     @Expose
     private MarkerLocation markerLocation;
@@ -33,6 +30,12 @@ public class MarkerInfo {
     private Float distance;
 
     private Boolean inRange = false;
+
+    public MarkerInfo(String name, String category, MarkerLocation markerLocation) {
+        this.name = name;
+        this.category = category;
+        this.markerLocation = markerLocation;
+    }
 
     public Float getDistance() {
         return distance;
@@ -60,10 +63,6 @@ public class MarkerInfo {
 
     public LocationTime getTime() {
         return time;
-    }
-
-    public String getType() {
-        return type;
     }
 
     public String getCategory() {

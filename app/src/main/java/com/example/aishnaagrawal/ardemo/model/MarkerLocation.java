@@ -15,6 +15,11 @@ public class MarkerLocation {
     @Expose
     private String longitude;
 
+    public MarkerLocation(String latitude, String longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
     public Float getLat() {
         return Float.parseFloat(latitude);
     }
