@@ -26,6 +26,7 @@ import com.example.aishnaagrawal.ardemo.R;
 import com.example.aishnaagrawal.ardemo.api.MarkerApi;
 import com.example.aishnaagrawal.ardemo.helper.CameraPermissionHelper;
 import com.example.aishnaagrawal.ardemo.model.MarkerInfo;
+import com.example.aishnaagrawal.ardemo.model.MarkerLocation;
 import com.example.aishnaagrawal.ardemo.renderer.BackgroundRenderer;
 import com.example.aishnaagrawal.ardemo.renderer.ObjectRenderer;
 import com.google.ar.core.Config;
@@ -42,9 +43,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -149,7 +147,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         mMarkerList = new ArrayList<>();
 
-
+        /*
         Call<List<MarkerInfo>> call = mMarkerApi.getMarkers();
         call.enqueue(new Callback<List<MarkerInfo>>() {
             @Override
@@ -162,6 +160,17 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             public void onFailure(Call<List<MarkerInfo>> call, Throwable t) {
             }
         });
+        */
+
+
+        MarkerLocation markerLocation = new MarkerLocation("" + 36.969831, "" + -122.026331);
+        MarkerInfo marker = new MarkerInfo("Bagelry", "cafe", markerLocation);
+        mMarkerList.add(marker);
+
+        markerLocation = new MarkerLocation("" + 36.969808, "" + -122.026611);
+        marker = new MarkerInfo("Sunflower Spring", "spa", markerLocation);
+        mMarkerList.add(marker);
+
 
     }
 
@@ -169,7 +178,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     protected void onResume() {
         super.onResume();
 
-        Log.d("resume", "here");
         requestLocationPermission();
         registerSensors();
         requestCameraPermission();
@@ -180,14 +188,12 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSIONS_CODE);
         } else {
-            Log.d("location", "here");
             initLocationService();
         }
     }
 
     public void requestCameraPermission() {
         if (CameraPermissionHelper.hasCameraPermission(this)) {
-            Log.d("camera", "here");
             mSession.resume(mDefaultConfig);
             mSurfaceView.onResume();
         } else {
@@ -236,7 +242,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                     boolean isAzimuthInRange = false;
                     boolean isPitchInRange = false;
 
-                    MarkerInfo marker = mMarkerList.get(0);
+                    MarkerInfo marker = mMarkerList.get(i);
 
                     bearing = mLocation.bearingTo(marker.getLocation());
 
@@ -244,7 +250,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                     pitch = (float) Math.toDegrees(orientationValues[1]);
 
 
-                    if (azimuth > (bearing - 50) && azimuth < (bearing + 50)) {
+                    if (azimuth > (bearing - 10) && azimuth < (bearing + 10)) {
                         isAzimuthInRange = true;
                     }
 
@@ -252,9 +258,9 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                         isPitchInRange = true;
                     }
 
-                    Log.d("marker range before", marker.getInRange() + "");
-
                     if (isAzimuthInRange && isPitchInRange) {
+
+                        Log.d("name", marker.getName());
 
                         mTag.setText(marker.getName());
 
@@ -263,7 +269,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
                         if (isTapped) {
 
-                            String tag = marker.getCategory() + "\n" + marker.getTime().checkOpen();
+                            String tag = marker.getCategory();
                             mDesc.setText(tag);
 
                         } else {
@@ -276,7 +282,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                         marker.setInRange(false);
 
                     }
-                    Log.d("marker range after", marker.getInRange() + "");
 
                     //Log.d("location", mLocation.getAltitude() + "");
 
@@ -368,7 +373,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         if (!CameraPermissionHelper.hasCameraPermission(this)) {
             Toast.makeText(this,
                     "Camera permission is needed to run this application", Toast.LENGTH_LONG).show();
-            Log.d("permission", "here");
 //            finish();
         }
     }
@@ -456,21 +460,29 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             float scaleFactor = 1.0f;
 
             if (!mMarkerList.isEmpty()) {
-                for (int i = 0; i < mMarkerList.size(); i++) {
+                for (int i = 0; i < 1; i++) {
 
-                    if (mMarkerList.get(i).getInRange()) {
-                        Pose pose;
-                        float[] translation = new float[3], rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
+                    float[] translation = new float[3];
+                    float[] rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
 
-                        mTranslation = new float[]{-0.1f, -0.5f, -0.8f};
+                    MarkerInfo marker = mMarkerList.get(i);
+
+                    if (marker.getInRange()) {
+
+                        if (marker.getTranslation() == null) {
+                            frame.getPose().getTranslation(translation, 0);
+                            marker.setTranslation(translation);
+                            Log.d("marker", marker.getTranslation()[0]+"");
+                        }
+
 
                         frame.getPose().getTranslation(translation, 0);
 
-                        translation[0] = mTranslation[0] - translation[0];
-                        translation[1] = mTranslation[1] - translation[1];
-                        translation[2] = mTranslation[2] - translation[2];
+                        translation[0] = marker.getTranslation()[0] - translation[0];
+                        translation[1] = marker.getTranslation()[1] - translation[1];
+                        translation[2] = marker.getTranslation()[2] - translation[2];
 
-                        pose = new Pose(translation, rotation);
+                        Pose pose = new Pose(translation, rotation);
                         pose.toMatrix(mAnchorMatrix, 0);
 
                         mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);

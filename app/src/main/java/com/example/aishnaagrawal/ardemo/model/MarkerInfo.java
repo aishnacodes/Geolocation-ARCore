@@ -27,9 +27,11 @@ public class MarkerInfo {
     @Expose
     private MarkerLocation markerLocation;
 
-    private Float distance;
+    //Additional variables
+    private float distance;
+    private boolean inRange = false;
 
-    private Boolean inRange = false;
+    private float[] translation = new float[3];
 
     public MarkerInfo(String name, String category, MarkerLocation markerLocation) {
         this.name = name;
@@ -37,7 +39,7 @@ public class MarkerInfo {
         this.markerLocation = markerLocation;
     }
 
-    public Float getDistance() {
+    public float getDistance() {
         return distance;
     }
 
@@ -45,7 +47,7 @@ public class MarkerInfo {
         this.distance = distance;
     }
 
-    public Boolean getInRange() {
+    public boolean getInRange() {
         return inRange;
     }
 
@@ -76,6 +78,13 @@ public class MarkerInfo {
         return location;
     }
 
+    public float[] getTranslation() {
+        return translation;
+    }
+
+    public void setTranslation(float[] translation) {
+        this.translation = translation;
+    }
 
 }
 

@@ -12,7 +12,7 @@ public class LocationTime {
     private String data;
 
     @SerializedName("isOpen")
-    private Boolean isOpen;
+    private boolean isOpen;
 
     public String getData() {
         return data;
@@ -22,7 +22,7 @@ public class LocationTime {
         this.data = data;
     }
 
-    public Boolean checkOpen() {
+    public boolean checkOpen() {
         return isOpen;
     }
 

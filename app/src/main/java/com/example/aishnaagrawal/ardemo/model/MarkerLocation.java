@@ -20,11 +20,11 @@ public class MarkerLocation {
         this.longitude = longitude;
     }
 
-    public Float getLat() {
+    public float getLat() {
         return Float.parseFloat(latitude);
     }
 
-    public Float getLng() {
+    public float getLng() {
         return Float.parseFloat(longitude);
     }
 }
