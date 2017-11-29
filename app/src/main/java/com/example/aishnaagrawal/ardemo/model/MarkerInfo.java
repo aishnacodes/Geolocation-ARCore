@@ -32,6 +32,7 @@ public class MarkerInfo {
     private float distance;
     private boolean inRange;
     private Anchor anchor;
+    private float[] zeroMatrix = new float[16];
 
     public MarkerInfo(String name, String category, MarkerLocation markerLocation) {
         this.name = name;
@@ -80,6 +81,14 @@ public class MarkerInfo {
 
     public void setAnchor(Anchor anchor) {
         this.anchor = anchor;
+    }
+
+    public float[] getZeroMatrix() {
+        return zeroMatrix;
+    }
+
+    public void setZeroMatrix(float[] zeroMatrix) {
+        this.zeroMatrix = zeroMatrix;
     }
 
 

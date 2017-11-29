@@ -82,8 +82,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     boolean isNetworkEnabled;
     boolean locationServiceAvailable;
 
-    private boolean isCorrectLocation;
-    private boolean isAnchorAdded = false;
     private boolean isTapped = false;
 
     private static MarkerApi mMarkerApi;
@@ -171,13 +169,21 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         });
         */
 
-        MarkerLocation markerLocation = new MarkerLocation("" + 37.000349, "" + -122.064317);
-        MarkerInfo marker = new MarkerInfo("Jack Baskin Auditorium 101", "Academic Building", markerLocation);
-        mMarkerList.add(marker);
+//        MarkerLocation markerLocation = new MarkerLocation("" + 37.000349, "" + -122.064317);
+//        MarkerInfo marker = new MarkerInfo("Jack Baskin Auditorium 101", "Academic Building", markerLocation);
+//        mMarkerList.add(marker);
 
-        markerLocation = new MarkerLocation("" + 37.000926, "" + -122.062848);
-        marker = new MarkerInfo("Jack Baskin Engineering 2", "Academic Building", markerLocation);
-        mMarkerList.add(marker);
+//        markerLocation = new MarkerLocation("" + 37.000926, "" + -122.062848);
+//         marker = new MarkerInfo("Jack Baskin Engineering 2", "Academic Building", markerLocation);
+//        mMarkerList.add(marker);
+
+//        MarkerLocation markerLocation = new MarkerLocation("" + 36.998011, "" + -122.055702);
+//        MarkerInfo marker = new MarkerInfo("Bay Tree Bookstore", "Store", markerLocation);
+//        mMarkerList.add(marker);
+//
+//        markerLocation = new MarkerLocation("" + 36.994395, "" + -122.065229);
+//        marker = new MarkerInfo("Porter college", "College", markerLocation);
+//        mMarkerList.add(marker);
 
 //        markerLocation = new MarkerLocation("" + 37.000355, "" + -122.063148);
 //        marker = new MarkerInfo("Perk's coffee", "Cafe", markerLocation);
@@ -186,6 +192,15 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 //        markerLocation = new MarkerLocation("" + 37.000646, "" + -122.062097);
 //        marker = new MarkerInfo("Parking Lot 139", "Parking", markerLocation);
 //        mMarkerList.add(marker);
+
+
+        MarkerLocation markerLocation = new MarkerLocation("" + 36.969552, "" + -122.026809);
+        MarkerInfo marker = new MarkerInfo("Bagelry", "Store", markerLocation);
+        mMarkerList.add(marker);
+
+        markerLocation = new MarkerLocation("" + 36.969808, "" + -122.026611);
+        marker = new MarkerInfo("Spring spa", "College", markerLocation);
+        mMarkerList.add(marker);
 
 
     }
@@ -492,14 +507,14 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                             anchor = mSession.addAnchor(frame.getPose());
                             marker.setAnchor(anchor);
 
-                            mZeroMatrix = getCalibrationMatrix();
+                            marker.setZeroMatrix(getCalibrationMatrix());
 
 //                            frame.getPose().getTranslation(translation, 0);
 //                            Log.d("frame pose", translation[0] + " " + translation[1] + " " + translation[2]);
 
                         }
-                    }
-                    if (marker.getAnchor() != null) {
+
+                        if (marker.getAnchor() != null) {
 //                        pose = marker.getAnchor().getPose();
 //                        pose.getTranslation(translation, 0);
 //                        pose.getRotationQuaternion(rotation, 0);
@@ -507,22 +522,22 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 //                        translation[1] = translation[1] - 0.08f;
 //                        translation[2] = translation[2] - 0.8f;
 
-                        pose = new Pose(translation, rotation);
-                        pose.toMatrix(mAnchorMatrix, 0);
+                            pose = new Pose(translation, rotation);
+                            pose.toMatrix(mAnchorMatrix, 0);
 
-                        Matrix.multiplyMM(viewmtx, 0, viewmtx, 0, mZeroMatrix, 0);
+                            Matrix.multiplyMM(viewmtx, 0, viewmtx, 0, marker.getZeroMatrix(), 0);
 
-                        mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-                        mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
+                            mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
+                            mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
 
-                        if (tap != null) {
-                            if (!isTapped) {
-                                isTapped = true;
-                            } else {
-                                isTapped = false;
+                            if (tap != null) {
+                                if (!isTapped) {
+                                    isTapped = true;
+                                } else {
+                                    isTapped = false;
+                                }
                             }
                         }
-
 
                     }
                 }
