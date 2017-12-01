@@ -194,7 +194,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 //        mMarkerList.add(marker);
 
 
-        MarkerLocation markerLocation = new MarkerLocation("" + 36.969552, "" + -122.026809);
+        MarkerLocation markerLocation = new MarkerLocation("" + 36.969338, "" + -122.026544);
         MarkerInfo marker = new MarkerInfo("Bagelry", "Store", markerLocation);
         mMarkerList.add(marker);
 
@@ -282,7 +282,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                     azimuth = (float) Math.toDegrees(orientationValues[0]);
                     pitch = (float) Math.toDegrees(orientationValues[1]);
 
-                    azimuthRange = new Range<>(bearing - 20, bearing + 20);
+                    azimuthRange = new Range<>(bearing - 10, bearing + 10);
                     pitchRange = new Range<>(-90.0f, -45.0f);
 
                     if (azimuthRange.contains(azimuth) && pitchRange.contains(pitch)) {
@@ -435,7 +435,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         // Prepare the other rendering objects.
         try {
-            mVirtualObject.createOnGlThread(/*context=*/this, "World_Globe.obj", "World_Globe_S.png");
+            mVirtualObject.createOnGlThread(/*context=*/this, "book.obj", "cover_diffuse.png");
             mVirtualObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f);
 
         } catch (IOException e) {
@@ -485,7 +485,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             // Compute lighting from average intensity of the image.
             final float lightIntensity = frame.getLightEstimate().getPixelIntensity();
 
-            float scaleFactor = 0.03f;
+            float scaleFactor = 0.1f;
 
             Anchor anchor;
             Pose pose;
@@ -495,10 +495,12 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                 for (int i = 0; i < mMarkerList.size(); i++) {
 
                     float[] translation = new float[]{0.0f, -0.08f, -0.8f};
-                    float[] rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
+                    float[] rotation = new float[]{0.50f, 0.00f, 0.00f, 0.99f};
 
                     MarkerInfo marker = mMarkerList.get(i);
 
+                    mFrame.getPose().getRotationQuaternion(rotation, 0);
+                    Log.d("rotation", rotation[0] + "" + rotation[1] + "" + rotation[2] + "" + rotation[3]);
 
                     if (marker.getInRange()) {
 
@@ -513,8 +515,10 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 //                            Log.d("frame pose", translation[0] + " " + translation[1] + " " + translation[2]);
 
                         }
+                    }
 
-                        if (marker.getAnchor() != null) {
+
+                    if (marker.getAnchor() != null) {
 //                        pose = marker.getAnchor().getPose();
 //                        pose.getTranslation(translation, 0);
 //                        pose.getRotationQuaternion(rotation, 0);
@@ -522,26 +526,26 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 //                        translation[1] = translation[1] - 0.08f;
 //                        translation[2] = translation[2] - 0.8f;
 
-                            pose = new Pose(translation, rotation);
-                            pose.toMatrix(mAnchorMatrix, 0);
+                        pose = new Pose(translation, rotation);
+                        pose.toMatrix(mAnchorMatrix, 0);
 
-                            Matrix.multiplyMM(viewmtx, 0, viewmtx, 0, marker.getZeroMatrix(), 0);
+                        Matrix.multiplyMM(viewmtx, 0, viewmtx, 0, marker.getZeroMatrix(), 0);
 
-                            mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-                            mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
+                        mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
+                        mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
 
-                            if (tap != null) {
-                                if (!isTapped) {
-                                    isTapped = true;
-                                } else {
-                                    isTapped = false;
-                                }
+                        if (tap != null) {
+                            if (!isTapped) {
+                                isTapped = true;
+                            } else {
+                                isTapped = false;
                             }
                         }
-
                     }
+
                 }
             }
+//            }
 
 
             /*float[] translation = new float[]{0.0f, -0.08f, -0.8f};
