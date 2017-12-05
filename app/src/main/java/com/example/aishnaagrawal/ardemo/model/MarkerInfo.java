@@ -2,7 +2,6 @@ package com.example.aishnaagrawal.ardemo.model;
 
 import android.location.Location;
 
-import com.google.ar.core.Anchor;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -31,8 +30,7 @@ public class MarkerInfo {
     //Additional variables
     private float distance;
     private boolean inRange;
-    private Anchor anchor;
-    private float[] zeroMatrix = new float[16];
+    private float[] zeroMatrix;
 
     public MarkerInfo(String name, String category, MarkerLocation markerLocation) {
         this.name = name;
@@ -75,14 +73,6 @@ public class MarkerInfo {
         return location;
     }
 
-    public Anchor getAnchor() {
-        return anchor;
-    }
-
-    public void setAnchor(Anchor anchor) {
-        this.anchor = anchor;
-    }
-
     public float[] getZeroMatrix() {
         return zeroMatrix;
     }
@@ -90,7 +80,6 @@ public class MarkerInfo {
     public void setZeroMatrix(float[] zeroMatrix) {
         this.zeroMatrix = zeroMatrix;
     }
-
 
 }
 

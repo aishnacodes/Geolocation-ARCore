@@ -31,7 +31,6 @@ import com.example.aishnaagrawal.ardemo.model.MarkerInfo;
 import com.example.aishnaagrawal.ardemo.model.MarkerLocation;
 import com.example.aishnaagrawal.ardemo.renderer.BackgroundRenderer;
 import com.example.aishnaagrawal.ardemo.renderer.ObjectRenderer;
-import com.google.ar.core.Anchor;
 import com.google.ar.core.Config;
 import com.google.ar.core.Frame;
 import com.google.ar.core.Frame.TrackingState;
@@ -62,7 +61,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     private Session mSession;
     private BackgroundRenderer mBackgroundRenderer = new BackgroundRenderer();
     private GestureDetector mGestureDetector;
-
     private ObjectRenderer mVirtualObject = new ObjectRenderer();
     private final float[] mAnchorMatrix = new float[16];
 
@@ -92,6 +90,11 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     private Frame mFrame;
     private float[] mZeroMatrix = new float[16];
 
+    float[] translation = new float[]{0.0f, -0.8f, -0.8f};
+    float[] rotation = new float[]{0.0f, -1.00f, 0.00f, 0.99f};
+
+    Pose mPose = new Pose(translation, rotation);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +103,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         mSurfaceView = (GLSurfaceView) findViewById(R.id.surfaceview);
 
-        mTag = (TextView) findViewById(R.id.textview);
+//        mTag = (TextView) findViewById(R.id.textview);
         mDesc = (TextView) findViewById(R.id.textview2);
 
         mSession = new Session(/*context=*/this);
@@ -116,6 +119,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         }
 
         Matrix.setIdentityM(mZeroMatrix, 0);
+        mPose.toMatrix(mAnchorMatrix, 0);
 
         // Set up tap listener.
         mGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
@@ -169,39 +173,29 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         });
         */
 
-//        MarkerLocation markerLocation = new MarkerLocation("" + 37.000349, "" + -122.064317);
-//        MarkerInfo marker = new MarkerInfo("Jack Baskin Auditorium 101", "Academic Building", markerLocation);
-//        mMarkerList.add(marker);
-
-//        markerLocation = new MarkerLocation("" + 37.000926, "" + -122.062848);
-//         marker = new MarkerInfo("Jack Baskin Engineering 2", "Academic Building", markerLocation);
-//        mMarkerList.add(marker);
-
-//        MarkerLocation markerLocation = new MarkerLocation("" + 36.998011, "" + -122.055702);
-//        MarkerInfo marker = new MarkerInfo("Bay Tree Bookstore", "Store", markerLocation);
-//        mMarkerList.add(marker);
-//
-//        markerLocation = new MarkerLocation("" + 36.994395, "" + -122.065229);
-//        marker = new MarkerInfo("Porter college", "College", markerLocation);
-//        mMarkerList.add(marker);
-
-//        markerLocation = new MarkerLocation("" + 37.000355, "" + -122.063148);
-//        marker = new MarkerInfo("Perk's coffee", "Cafe", markerLocation);
-//        mMarkerList.add(marker);
-//
-//        markerLocation = new MarkerLocation("" + 37.000646, "" + -122.062097);
-//        marker = new MarkerInfo("Parking Lot 139", "Parking", markerLocation);
-//        mMarkerList.add(marker);
-
-
-        MarkerLocation markerLocation = new MarkerLocation("" + 36.969338, "" + -122.026544);
-        MarkerInfo marker = new MarkerInfo("Bagelry", "Store", markerLocation);
+        MarkerLocation markerLocation = new MarkerLocation("" + 37.000355, "" + -122.063148);
+        MarkerInfo marker = new MarkerInfo("Jack Baskin Engineering1", "Academic Building", markerLocation);
         mMarkerList.add(marker);
 
-        markerLocation = new MarkerLocation("" + 36.969808, "" + -122.026611);
-        marker = new MarkerInfo("Spring spa", "College", markerLocation);
+        markerLocation = new MarkerLocation("" + 37.000985, "" + -122.063073);
+        marker = new MarkerInfo("Jack Baskin Engineering2", "Academic Building", markerLocation);
         mMarkerList.add(marker);
 
+//        markerLocation = new MarkerLocation("" + 36.999010, "" + -122.060637);
+//        marker = new MarkerInfo("SE library", "library", markerLocation);
+//        mMarkerList.add(marker);
+
+//        markerLocation = new MarkerLocation("" + 37.000349, "" + -122.064317);
+//        marker = new MarkerInfo("Mchenry library", "library", markerLocation);
+//        mMarkerList.add(marker);
+//
+//        markerLocation = new MarkerLocation("" + 36.998011, "" + -122.055702);
+//        marker = new MarkerInfo("baytree bookstore", "store", markerLocation);
+//        mMarkerList.add(marker);
+//
+//        markerLocation = new MarkerLocation("" + 36.998130, "" + -122.055811);
+//        marker = new MarkerInfo("GSC", "graduate room", markerLocation);
+//        mMarkerList.add(marker);
 
     }
 
@@ -267,55 +261,41 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
             SensorManager.getOrientation(updatedRotationMatrix, orientationValues);
 
-            String name = "";
+            if (mMarkerList.isEmpty()) {
+                return;
+            }
 
-            if (!mMarkerList.isEmpty()) {
+            for (int i = 0; i < mMarkerList.size(); i++) {
 
-                for (int i = 0; i < mMarkerList.size(); i++) {
+                MarkerInfo marker = mMarkerList.get(i);
 
-                    boolean markerInRange = false;
+                bearing = mLocation.bearingTo(marker.getLocation());
 
-                    MarkerInfo marker = mMarkerList.get(i);
+                azimuth = (float) Math.toDegrees(orientationValues[0]);
+                pitch = (float) Math.toDegrees(orientationValues[1]);
 
-                    bearing = mLocation.bearingTo(marker.getLocation());
+                azimuthRange = new Range<>(bearing - 10, bearing + 10);
+                pitchRange = new Range<>(-90.0f, -45.0f);
 
-                    azimuth = (float) Math.toDegrees(orientationValues[0]);
-                    pitch = (float) Math.toDegrees(orientationValues[1]);
 
-                    azimuthRange = new Range<>(bearing - 10, bearing + 10);
-                    pitchRange = new Range<>(-90.0f, -45.0f);
-
-                    if (azimuthRange.contains(azimuth) && pitchRange.contains(pitch)) {
-                        markerInRange = true;
-                    }
-
-                    if (markerInRange) {
-
-                        name = marker.getName();
-
-                        marker.setInRange(true);
-
-                        if (isTapped) {
-
-                            String tag = marker.getCategory();
-                            mDesc.setText(tag);
-
-                        } else {
-                            mDesc.setText("");
-                        }
-
-                    } else {
-
-                        marker.setInRange(false);
-                    }
-
-                    //Log.d("location", mLocation.getAltitude() + "");
-
-                    //Log.d("azimuth", azimuth + " bearing: " + bearing + " ");
+                if (azimuthRange.contains(azimuth) && pitchRange.contains(pitch)) {
+                    marker.setInRange(true);
+                } else {
+                    marker.setInRange(false);
                 }
 
+                if (marker.getInRange()) {
+
+                    if (isTapped) {
+
+                        String tag = marker.getCategory();
+                        mDesc.setText(tag);
+
+                    } else {
+                        mDesc.setText("");
+                    }
+                }
             }
-            mTag.setText(name);
         }
     }
 
@@ -400,7 +380,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         if (!CameraPermissionHelper.hasCameraPermission(this)) {
             Toast.makeText(this,
                     "Camera permission is needed to run this application", Toast.LENGTH_LONG).show();
-//            finish();
+            finish();
         }
     }
 
@@ -435,7 +415,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         // Prepare the other rendering objects.
         try {
-            mVirtualObject.createOnGlThread(/*context=*/this, "book.obj", "cover_diffuse.png");
+            mVirtualObject.createOnGlThread(/*context=*/this, "sign.obj", "jb2.jpg");
             mVirtualObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f);
 
         } catch (IOException e) {
@@ -485,77 +465,35 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             // Compute lighting from average intensity of the image.
             final float lightIntensity = frame.getLightEstimate().getPixelIntensity();
 
-            float scaleFactor = 0.1f;
+            float scaleFactor = 0.5f;
 
-            Anchor anchor;
-            Pose pose;
+            MarkerInfo marker;
 
-            if (!mMarkerList.isEmpty()) {
+            if (mMarkerList.isEmpty()) {
+                return;
+            }
 
-                for (int i = 0; i < mMarkerList.size(); i++) {
+            for (int i = 0; i < mMarkerList.size(); i++) {
 
-                    float[] translation = new float[]{0.0f, -0.08f, -0.8f};
-                    float[] rotation = new float[]{0.50f, 0.00f, 0.00f, 0.99f};
+                marker = mMarkerList.get(i);
 
-                    MarkerInfo marker = mMarkerList.get(i);
+                if (marker.getInRange()) {
 
-                    mFrame.getPose().getRotationQuaternion(rotation, 0);
-                    Log.d("rotation", rotation[0] + "" + rotation[1] + "" + rotation[2] + "" + rotation[3]);
-
-                    if (marker.getInRange()) {
-
-                        if (marker.getAnchor() == null) {
-
-                            anchor = mSession.addAnchor(frame.getPose());
-                            marker.setAnchor(anchor);
-
-                            marker.setZeroMatrix(getCalibrationMatrix());
-
-//                            frame.getPose().getTranslation(translation, 0);
-//                            Log.d("frame pose", translation[0] + " " + translation[1] + " " + translation[2]);
-
-                        }
+                    if (marker.getZeroMatrix() == null) {
+                        marker.setZeroMatrix(getCalibrationMatrix());
                     }
+                }
 
+                Matrix.multiplyMM(viewmtx, 0, viewmtx, 0, marker.getZeroMatrix(), 0);
 
-                    if (marker.getAnchor() != null) {
-//                        pose = marker.getAnchor().getPose();
-//                        pose.getTranslation(translation, 0);
-//                        pose.getRotationQuaternion(rotation, 0);
-//
-//                        translation[1] = translation[1] - 0.08f;
-//                        translation[2] = translation[2] - 0.8f;
+                mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
+                mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
 
-                        pose = new Pose(translation, rotation);
-                        pose.toMatrix(mAnchorMatrix, 0);
-
-                        Matrix.multiplyMM(viewmtx, 0, viewmtx, 0, marker.getZeroMatrix(), 0);
-
-                        mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-                        mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-
-                        if (tap != null) {
-                            if (!isTapped) {
-                                isTapped = true;
-                            } else {
-                                isTapped = false;
-                            }
-                        }
-                    }
-
+                if (tap != null) {
+                    isTapped = !isTapped;
                 }
             }
 //            }
-
-
-            /*float[] translation = new float[]{0.0f, -0.08f, -0.8f};
-            float[] rotation = new float[]{0.00f, 0.00f, 0.00f, 0.99f};
-            Pose pose = new Pose(translation, rotation);
-            pose.toMatrix(mAnchorMatrix, 0);
-
-            mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
-            mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-            */
 
         } catch (Throwable t) {
             // Avoid crashing the application due to unhandled exceptions.
@@ -581,4 +519,5 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         Matrix.rotateM(m, 0, (float) Math.toDegrees(rotate), 0, 1, 0);
         return m;
     }
+
 }
