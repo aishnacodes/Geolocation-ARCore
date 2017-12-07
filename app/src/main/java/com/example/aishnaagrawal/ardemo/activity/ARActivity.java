@@ -99,9 +99,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         setContentView(R.layout.activity_ar);
 
         mSurfaceView = (GLSurfaceView) findViewById(R.id.surfaceview);
-
         mSession = new Session(/*context=*/this);
-
         mSensorManager = (SensorManager) this.getSystemService(SENSOR_SERVICE);
 
         // Create default config, check is supported, create session from that config.
@@ -147,9 +145,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                 .baseUrl(mBaseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
-
         mMarkerApi = mRetrofit.create(MarkerApi.class);
-
         mMarkerList = new ArrayList<>();
 
         Call<List<MarkerInfo>> call = mMarkerApi.getMarkers();
@@ -221,12 +217,10 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             float[] orientationValues = new float[3];
 
             SensorManager.getRotationMatrixFromVector(rotationMatrixFromVector, sensorEvent.values);
-
             SensorManager
                     .remapCoordinateSystem(rotationMatrixFromVector,
                             SensorManager.AXIS_X, SensorManager.AXIS_Y,
                             updatedRotationMatrix);
-
             SensorManager.getOrientation(updatedRotationMatrix, orientationValues);
 
             if (mMarkerList.isEmpty()) {
@@ -238,7 +232,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                 MarkerInfo marker = mMarkerList.get(i);
 
                 bearing = mLocation.bearingTo(marker.getLocation());
-
                 azimuth = (float) Math.toDegrees(orientationValues[0]);
                 pitch = (float) Math.toDegrees(orientationValues[1]);
 
@@ -373,8 +366,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             mVirtualObject.createOnGlThread(/*context=*/this, "sign.obj", "mchenry.jpg");
             mVirtualObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f);
 
-            //mMarkerList.get(0).setVirtualObject(mVirtualObject);
-
         } catch (IOException e) {
             Log.e(TAG, "Failed to read obj file");
         }
@@ -435,7 +426,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                 marker = mMarkerList.get(i);
 
                 if (marker.getInRange()) {
-
                     if (marker.getZeroMatrix() == null) {
                         marker.setZeroMatrix(getCalibrationMatrix());
                     }
