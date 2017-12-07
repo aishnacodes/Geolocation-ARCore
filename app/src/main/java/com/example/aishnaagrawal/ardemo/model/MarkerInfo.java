@@ -2,6 +2,7 @@ package com.example.aishnaagrawal.ardemo.model;
 
 import android.location.Location;
 
+import com.example.aishnaagrawal.ardemo.renderer.ObjectRenderer;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -31,6 +32,7 @@ public class MarkerInfo {
     private float distance;
     private boolean inRange;
     private float[] zeroMatrix;
+    private ObjectRenderer virtualObject;
 
     public MarkerInfo(String name, String category, MarkerLocation markerLocation) {
         this.name = name;
@@ -79,6 +81,14 @@ public class MarkerInfo {
 
     public void setZeroMatrix(float[] zeroMatrix) {
         this.zeroMatrix = zeroMatrix;
+    }
+
+    public ObjectRenderer getVirtualObject() {
+        return virtualObject;
+    }
+
+    public void setVirtualObject(ObjectRenderer virtualObject) {
+        this.virtualObject = virtualObject;
     }
 
 }

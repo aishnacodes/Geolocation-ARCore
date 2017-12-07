@@ -21,14 +21,12 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.aishnaagrawal.ardemo.R;
 import com.example.aishnaagrawal.ardemo.api.MarkerApi;
 import com.example.aishnaagrawal.ardemo.helper.CameraPermissionHelper;
 import com.example.aishnaagrawal.ardemo.model.MarkerInfo;
-import com.example.aishnaagrawal.ardemo.model.MarkerLocation;
 import com.example.aishnaagrawal.ardemo.renderer.BackgroundRenderer;
 import com.example.aishnaagrawal.ardemo.renderer.ObjectRenderer;
 import com.google.ar.core.Config;
@@ -46,6 +44,9 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import javax.vecmath.Vector3f;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -53,15 +54,13 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
     private static final String TAG = ARActivity.class.getSimpleName();
 
-    private TextView mTag;
-    private TextView mDesc;
-
     private GLSurfaceView mSurfaceView;
     private Config mDefaultConfig;
     private Session mSession;
     private BackgroundRenderer mBackgroundRenderer = new BackgroundRenderer();
     private GestureDetector mGestureDetector;
     private ObjectRenderer mVirtualObject = new ObjectRenderer();
+
     private final float[] mAnchorMatrix = new float[16];
 
     // Tap handling and UI.
@@ -80,8 +79,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     boolean isNetworkEnabled;
     boolean locationServiceAvailable;
 
-    private boolean isTapped = false;
-
     private static MarkerApi mMarkerApi;
     private String mBaseUrl = "http://139.59.30.117:3000/listings/";
     private Retrofit mRetrofit;
@@ -91,7 +88,7 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
     private float[] mZeroMatrix = new float[16];
 
     float[] translation = new float[]{0.0f, -0.8f, -0.8f};
-    float[] rotation = new float[]{0.0f, -1.00f, 0.00f, 0.99f};
+    float[] rotation = new float[]{0.0f, -1.00f, 0.0f, 0.3f};
 
     Pose mPose = new Pose(translation, rotation);
 
@@ -102,9 +99,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         setContentView(R.layout.activity_ar);
 
         mSurfaceView = (GLSurfaceView) findViewById(R.id.surfaceview);
-
-//        mTag = (TextView) findViewById(R.id.textview);
-        mDesc = (TextView) findViewById(R.id.textview2);
 
         mSession = new Session(/*context=*/this);
 
@@ -158,7 +152,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         mMarkerList = new ArrayList<>();
 
-        /*
         Call<List<MarkerInfo>> call = mMarkerApi.getMarkers();
         call.enqueue(new Callback<List<MarkerInfo>>() {
             @Override
@@ -171,31 +164,6 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
             public void onFailure(Call<List<MarkerInfo>> call, Throwable t) {
             }
         });
-        */
-
-        MarkerLocation markerLocation = new MarkerLocation("" + 37.000355, "" + -122.063148);
-        MarkerInfo marker = new MarkerInfo("Jack Baskin Engineering1", "Academic Building", markerLocation);
-        mMarkerList.add(marker);
-
-        markerLocation = new MarkerLocation("" + 37.000985, "" + -122.063073);
-        marker = new MarkerInfo("Jack Baskin Engineering2", "Academic Building", markerLocation);
-        mMarkerList.add(marker);
-
-//        markerLocation = new MarkerLocation("" + 36.999010, "" + -122.060637);
-//        marker = new MarkerInfo("SE library", "library", markerLocation);
-//        mMarkerList.add(marker);
-
-//        markerLocation = new MarkerLocation("" + 37.000349, "" + -122.064317);
-//        marker = new MarkerInfo("Mchenry library", "library", markerLocation);
-//        mMarkerList.add(marker);
-//
-//        markerLocation = new MarkerLocation("" + 36.998011, "" + -122.055702);
-//        marker = new MarkerInfo("baytree bookstore", "store", markerLocation);
-//        mMarkerList.add(marker);
-//
-//        markerLocation = new MarkerLocation("" + 36.998130, "" + -122.055811);
-//        marker = new MarkerInfo("GSC", "graduate room", markerLocation);
-//        mMarkerList.add(marker);
 
     }
 
@@ -277,23 +245,10 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                 azimuthRange = new Range<>(bearing - 10, bearing + 10);
                 pitchRange = new Range<>(-90.0f, -45.0f);
 
-
                 if (azimuthRange.contains(azimuth) && pitchRange.contains(pitch)) {
                     marker.setInRange(true);
                 } else {
                     marker.setInRange(false);
-                }
-
-                if (marker.getInRange()) {
-
-                    if (isTapped) {
-
-                        String tag = marker.getCategory();
-                        mDesc.setText(tag);
-
-                    } else {
-                        mDesc.setText("");
-                    }
                 }
             }
         }
@@ -415,8 +370,10 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
 
         // Prepare the other rendering objects.
         try {
-            mVirtualObject.createOnGlThread(/*context=*/this, "sign.obj", "jb2.jpg");
+            mVirtualObject.createOnGlThread(/*context=*/this, "sign.obj", "mchenry.jpg");
             mVirtualObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f);
+
+            //mMarkerList.get(0).setVirtualObject(mVirtualObject);
 
         } catch (IOException e) {
             Log.e(TAG, "Failed to read obj file");
@@ -484,16 +441,19 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
                     }
                 }
 
+                if (marker.getZeroMatrix() == null) {
+                    break;
+                }
+
                 Matrix.multiplyMM(viewmtx, 0, viewmtx, 0, marker.getZeroMatrix(), 0);
 
                 mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
                 mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
 
                 if (tap != null) {
-                    isTapped = !isTapped;
+                    showToast(marker.getCategory());
                 }
             }
-//            }
 
         } catch (Throwable t) {
             // Avoid crashing the application due to unhandled exceptions.
@@ -518,6 +478,15 @@ public class ARActivity extends AppCompatActivity implements GLSurfaceView.Rende
         Matrix.translateM(m, 0, t[0], t[1], t[2]);
         Matrix.rotateM(m, 0, (float) Math.toDegrees(rotate), 0, 1, 0);
         return m;
+    }
+
+    private void showToast(final String category) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), category, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 }
